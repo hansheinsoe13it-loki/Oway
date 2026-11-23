@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OWAY FEE CALCULATOR - Made By Han Shein Soe</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            margin: 0;
+            font-family: "Noto Sans Myanmar", "Pyidaungsu", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #e2e8f0;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 448px;
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+        }
+        @media (min-width: 640px) {
+            body {
+                padding: 20px 12px;
+            }
+            .app-shell {
+                min-height: auto;
+                border-radius: 24px;
+                border: 1px solid #cbd5e1;
+                overflow: hidden;
+            }
+        }
+
+        /* Header */
+        .app-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 16px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+        .app-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+        }
+        .app-subtitle {
+            margin: 4px 0 0;
+            font-size: 11px;
+            font-weight: 600;
+            color: #34d399;
+        }
+
+        /* Main & Cards */
+        .app-main {
+            padding: 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .credit-banner {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
+            color: #fcd34d;
+            text-align: center;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border: 1px solid #334155;
+        }
+
+        /* Mode Switcher */
+        .mode-tabs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            background-color: #e2e8f0;
+            padding: 4px;
+            border-radius: 14px;
+        }
+        .mode-tab {
+            border: none;
+            border-radius: 11px;
+            padding: 9px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .mode-tab.gps-mode.active {
+            background-color: #059669;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+        }
+        .mode-tab.street-mode.active {
+            background-color: #0f172a;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .section-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot-green {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background-color: #10b981;
+            display: inline-block;
+        }
+        .dot-amber {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background-color: #f59e0b;
+            display: inline-block;
+        }
+        .badge-green {
+            font-size: 11px;
+            font-weight: 700;
+            background-color: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            padding: 2px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .badge-amber {
+            font-size: 11px;
+            font-weight: 700;
+            background-color: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+            padding: 2px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        /* Grid & Inputs */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .input-wrap {
+            position: relative;
+        }
+        .num-input {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 38px 10px 12px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+        }
+        .num-input:focus {
+            background-color: #ffffff;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+        }
+        .input-suffix {
+            position: absolute;
+            right: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+        .helper-text {
+            font-size: 11px;
+            color: #64748b;
+            margin: 4px 0 0 4px;
+        }
+        .warning-box {
+            display: none;
+            font-size: 11px;
+            font-weight: 600;
+            color: #92400e;
+            background-color: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+        .warning-box.show {
+            display: block;
+        }
+
+        /* Rate Input with - / + Buttons on Both Sides */
+        .rate-stepper-box {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .rate-step-btn {
+            width: 34px;
+            height: 42px;
+            flex-shrink: 0;
+            border-radius: 11px;
+            border: 1px solid #cbd5e1;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.12s, transform 0.1s;
+        }
+        .rate-step-btn:hover {
+            background-color: #e2e8f0;
+        }
+        .rate-step-btn:active {
+            transform: scale(0.93);
+        }
+        .rate-num-input {
+            width: 100%;
+            min-width: 0;
+            text-align: center;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 11px;
+            padding: 10px 4px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+        }
+        .rate-num-input:focus {
+            background-color: #ffffff;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+        }
+
+        /* Interactive Map & GPS Panel */
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            background-color: #e2e8f0;
+            z-index: 1;
+        }
+        #interactiveMap {
+            width: 100%;
+            height: 100%;
+        }
+        .map-hint-pill {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            background-color: rgba(15, 23, 42, 0.88);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 999px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .gps-status-box {
+            background-color: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 11px;
+            color: #334155;
+            line-height: 1.5;
+        }
+        .gps-status-box.ok {
+            background-color: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+        .gps-status-box.err {
+            background-color: #fff1f2;
+            border-color: #fecdd3;
+            color: #9f1239;
+        }
+        .gps-btn {
+            border: none;
+            border-radius: 11px;
+            padding: 10px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.15s;
+        }
+        .gps-btn:active {
+            transform: scale(0.96);
+        }
+        .gps-btn-compact {
+            padding: 7px 8px;
+            font-size: 11px;
+            border-radius: 9px;
+            font-weight: 700;
+        }
+        .btn-loc {
+            background-color: #0f172a;
+            color: #ffffff;
+        }
+        .btn-start {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .btn-stop {
+            background-color: #e11d48;
+            color: #ffffff;
+        }
+        .btn-clear-pin {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Custom Map Markers */
+        .custom-pin-start {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background-color: #2563eb;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.7);
+        }
+        .custom-pin-end {
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            background-color: #e11d48;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.7);
+        }
+
+        /* Special Location Dropdown */
+        .special-select {
+            width: 100%;
+            background-color: rgba(254, 243, 199, 0.35);
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+        }
+        .special-select:focus {
+            background-color: #ffffff;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+        }
+        .special-select.has-value {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            color: #451a03;
+        }
+        .clear-link {
+            display: none;
+            background: none;
+            border: none;
+            color: #e11d48;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+        }
+        .clear-link.show {
+            display: inline;
+        }
+
+        /* Trip Type Buttons */
+        .choice-btn {
+            padding: 9px 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+        .choice-btn:active {
+            transform: scale(0.96);
+        }
+        .trip-btn.active {
+            background-color: #ecfdf5;
+            border-color: #059669;
+            color: #064e3b;
+            font-weight: 700;
+        }
+
+        /* Breakdown & Start Fee Stepper */
+        .row-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .border-top-light {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 10px;
+        }
+        .source-tag {
+            margin-left: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background-color: #f1f5f9;
+            color: #64748b;
+        }
+        .stepper-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .step-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background-color: #f1f5f9;
+            color: #334155;
+            font-size: 17px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .step-btn:active {
+            transform: scale(0.92);
+        }
+        .start-input {
+            width: 88px;
+            text-align: center;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 5px 6px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            outline: none;
+        }
+        .start-input:focus {
+            background-color: #ffffff;
+            border-color: #10b981;
+        }
+
+        /* Total Box */
+        .total-box {
+            background-color: #d1fae5;
+            border: 1px solid #6ee7b7;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .total-label {
+            font-size: 15px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .total-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #e11d48;
+        }
+
+        /* Bottom Compact Side-by-Side Clear & Copy Buttons */
+        .mini-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .mini-clear-btn {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            color: #334155;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .mini-clear-btn:hover {
+            background-color: #e2e8f0;
+        }
+        .mini-clear-btn:active {
+            transform: scale(0.98);
+        }
+        .mini-copy-btn {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: none;
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .mini-copy-btn:hover {
+            background-color: #1e293b;
+        }
+        .mini-copy-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <h1 class="app-title">🛺 CALCULATOR</h1>
+            <p id="headerSubtitle" class="app-subtitle">Map & Kilo Unit (၁ km = ၂,၀၀၀ ကျပ်)</p>
+        </header>
+
+        <main class="app-main">
+            <div class="credit-banner">Created By Han Shein Soe</div>
+
+            <!-- Mode Switcher: Kilometer First, ပြဈေး Second -->
+            <div class="mode-tabs">
+                <button type="button" id="tabGpsMode" class="mode-tab gps-mode active" onclick="switchCalcMode('gps')">
+                    📌 Kilometer
+                </button>
+                <button type="button" id="tabStreetMode" class="mode-tab street-mode" onclick="switchCalcMode('street')">
+                    ပြဈေး
+                </button>
+            </div>
+
+            <!-- MODE 1 (First): Interactive Map Location (Kilo) Calculator -->
+            <section id="gpsModePanel" class="card">
+                <div class="card-top">
+                    <span class="section-label">
+                        <span class="dot-amber"></span>
+                        သွားမည့်နေရာ ထောက်ပါ
+                    </span>
+                    <span id="gpsKmBadge" class="badge-amber">0.00 km</span>
+                </div>
+
+                <!-- Interactive Map Box -->
+                <div class="map-wrapper">
+                    <div class="map-hint-pill">👆 သွားချင်တဲ့နေရာကို မြေပုံပေါ်မှာ ထောက်ပါ</div>
+                    <div id="interactiveMap"></div>
+                </div>
+
+                <!-- Quick Map Actions -->
+                <div class="grid-2" style="gap: 6px;">
+                    <button type="button" class="gps-btn gps-btn-compact btn-loc" onclick="locateUserOnMap(true)">
+                        📡 လက်ရှိတည်နေရာ
+                    </button>
+                    <button type="button" class="gps-btn gps-btn-compact btn-clear-pin" onclick="clearDestinationPin()">
+                        📍 Pin ဖျက်မည်
+                    </button>
+                </div>
+
+                <!-- GPS Message Box -->
+                <div id="gpsStatusBox" class="gps-status-box">
+                    လက်ရှိ Location ရှာနေပါသည်... မြေပုံပေါ်တွင် သွားချင်တဲ့နေရာကို တိုက်ရိုက်ထောက်နိုင်ပါသည်။
+                </div>
+
+                <!-- Live Drive Tracking Button (Accumulates on Resume) -->
+                <button type="button" id="btnToggleTracking" class="gps-btn btn-start" onclick="toggleLiveTracking()">
+                    ▶ Start
+                </button>
+
+                <!-- Kilo & Rate Inputs -->
+                <div class="grid-2">
+                    <div>
+                        <label for="kmInput" class="field-label">ခရီးအကွာအဝေး (Kilo)</label>
+                        <div class="input-wrap">
+                            <input type="number" id="kmInput" step="0.01" min="0" inputmode="decimal" placeholder="0.00"
+                                class="num-input" oninput="onManualKmInput()">
+                            <span class="input-suffix">km</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="ratePerKmInput" class="field-label">၁ Kilo နှုန်းထား</label>
+                        <div class="rate-stepper-box">
+                            <button type="button" class="rate-step-btn" onclick="adjustRatePerKm(-CONFIG.KM_RATE_STEP)">−</button>
+                            <input type="number" id="ratePerKmInput" step="200" min="0" inputmode="numeric"
+                                class="rate-num-input" oninput="calculateAll()">
+                            <button type="button" class="rate-step-btn" onclick="adjustRatePerKm(CONFIG.KM_RATE_STEP)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODE 2 (Second): Street & Special Location -->
+            <section id="streetModePanel" class="card" style="display: none;">
+                <div class="card-top">
+                    <span class="section-label">
+                        <span class="dot-green"></span>
+                        လမ်းတည်နေရာ ထည့်သွင်းရန်
+                    </span>
+                    <span id="totalBlocksBadge" class="badge-green">စုစုပေါင်း: 0 ပြ</span>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label for="ewStreet" class="field-label">ရှေ့နောက်လမ်း</label>
+                        <div class="input-wrap">
+                            <input type="number" id="ewStreet" inputmode="numeric" placeholder="30" class="num-input" oninput="onStreetInput()">
+                            <span class="input-suffix">လမ်း</span>
+                        </div>
+                        <p id="ewHelper" class="helper-text">၃၀ လမ်းမှ 0 ပြ (0)</p>
+                    </div>
+
+                    <div>
+                        <label for="nsStreet" class="field-label">တောင်မြောက်လမ်း</label>
+                        <div class="input-wrap">
+                            <input type="number" id="nsStreet" inputmode="numeric" placeholder="77" class="num-input" oninput="onStreetInput()">
+                            <span class="input-suffix">လမ်း</span>
+                        </div>
+                        <p id="nsHelper" class="helper-text">၇၇ လမ်းမှ 0 ပြ (0)</p>
+                    </div>
+                </div>
+
+                <div id="streetWarning" class="warning-box">
+                    ⚠️ မန္တလေးတွင် ၄၃ လမ်းပြီးလျှင် ၁၀၁ လမ်းသို့ တိုက်ရိုက်ရောက်ပါသည် (၄၄ မှ ၁၀၀ လမ်း မရှိပါ)။
+                </div>
+
+                <div>
+                    <div class="card-top" style="margin-bottom: 4px;">
+                        <label for="specialLocationSelect" class="field-label" style="margin-bottom: 0;">တည်နေရာတိုက်ရိုက်</label>
+                        <button type="button" id="clearSpecialBtn" class="clear-link" onclick="clearSpecialLocation()">ဖျက်မည် ✕</button>
+                    </div>
+                    <select id="specialLocationSelect" class="special-select" onchange="onSpecialLocationChange()">
+                        <option value="">>> တည်နေရာ ရွေးပါ <<</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Trip Type & Start Fee -->
+            <section class="card">
+                <div>
+                    <div class="card-top" style="margin-bottom: 6px;">
+                        <label class="field-label" style="margin-bottom: 0;">ခရီးစဉ် အမျိုးအစား</label>
+                        <span id="tripTypeBadge" style="font-size: 11px; font-weight: 600; color: #64748b;">၁ ကြောင်းစာ</span>
+                    </div>
+                    <div class="grid-2">
+                        <button type="button" data-trip="oneway" class="choice-btn trip-btn active" onclick="setTripType('oneway')">အသွားသီးသန့်</button>
+                        <button type="button" data-trip="roundtrip" class="choice-btn trip-btn" onclick="setTripType('roundtrip')">အသွားအပြန်</button>
+                    </div>
+                </div>
+
+                <div class="row-between border-top-light">
+                    <span style="font-size: 14px; font-weight: 700; color: #475569;">စတက်</span>
+                    <div class="stepper-group">
+                        <button type="button" class="step-btn" onclick="adjustStartFee(-CONFIG.START_STEP)">−</button>
+                        <input type="number" id="startFeeInput" value="1000" inputmode="numeric" class="start-input" oninput="calculateAll()">
+                        <button type="button" class="step-btn" onclick="adjustStartFee(CONFIG.START_STEP)">+</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Fee Breakdown, Total & Bottom Clear/Copy -->
+            <section class="card">
+                <div class="row-between">
+                    <div>
+                        <span id="routeFeeTitle" style="font-size: 14px; font-weight: 600; color: #475569;">Kilo ခရီးစရိတ်</span>
+                        <span id="routeSourceTag" class="source-tag">0.00 km</span>
+                    </div>
+                    <span id="routeFeeDisplay" style="font-size: 16px; font-weight: 800; color: #0f172a;">0</span>
+                </div>
+
+                <div class="row-between border-top-light">
+                    <span style="font-size: 14px; font-weight: 600; color: #475569;">စတက်</span>
+                    <span id="startFeeSummaryDisplay" style="font-size: 15px; font-weight: 700; color: #334155;">1,000</span>
+                </div>
+
+                <div class="total-box">
+                    <span class="total-label">စုစုပေါင်း ကျသင့်ငွေ</span>
+                    <span id="totalFeeDisplay" class="total-value">1,000 ကျပ်</span>
+                </div>
+
+                <div class="mini-actions">
+                    <button type="button" class="mini-clear-btn" onclick="resetForm()">Clear</button>
+                    <button type="button" class="mini-copy-btn" onclick="copySummary()">Copy</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+    <script>
+        // =========================================================================
+        // အလွယ်တကူ ပြင်ဆင်နိုင်သော CONFIG (နာမည်၊ ဈေးနှုန်း၊ Kilo သတ်မှတ်ချက်များ)
+        // =========================================================================
+        const CONFIG = {
+            RATE_PER_BLOCK: 400,                 // ၁ ပြ ဈေးနှုန်း (ကျပ်)
+            DEFAULT_RATE_PER_KM: 1600,         // ၁ Kilo နှုန်းထား မူလတန်ဖိုး (ကျပ်)
+            KM_RATE_STEP: 200,                   // ၁ Kilo နှုန်းထား -/+ တစ်ချက်နှိပ်တိုင်း ပြောင်းမည့်ပမာဏ (ကျပ်)
+            ROAD_FACTOR: 1.25,                   // Routing API မရသည့်အခါ မျဉ်းဖြောင့်မှ ခန့်မှန်းအဆ
+            MIN_MOVE_KM: 0.008,                  // Live Tracking တွင် ရွေ့လျားမှုအဖြစ် မှတ်ယူမည့် အနည်းဆုံး km
+            CENTER_EW: 30,                       // ဗဟို ရှေ့နောက်လမ်း
+            CENTER_NS: 77,                       // ဗဟို တောင်မြောက်လမ်း
+            DEFAULT_START_FEE: 0,                // စတက် မူလတန်ဖိုး (ကျပ်)
+            START_STEP: 1000,                    // စတက် +/- တစ်ချက်နှိပ်တိုင်း ပြောင်းမည့်ပမာဏ (ကျပ်)
+            MAP_DEFAULT_COORDS: { lat: 21.9756, lon: 96.0875 }, // ၃၀ လမ်း × ၇၇ လမ်းထောင့်
+
+            SPECIAL_LOCATIONS: [
+                { name: "မဲကင်းကုန်း", fee: 20000 },
+                { name: "စွယ်တော်", fee: 30000 },
+                { name: "မြို့ပတ်လမ်း", fee: 30000 },
+                { name: "ကမ်းနားလမ်း", fee: 15000 },
+                { name: "ဈေးချို", fee: 3000 },
+                { name: "ဘူတာကြီး", fee: 2000 },
+                { name: "ကျုံးအရှေ့", fee: 5000 },
+                { name: "မန္တလေးတောင်", fee: 15000 },
+                { name: "အမရပူရ", fee: 15000 },
+                { name: "ပုသိမ်ကြီး", fee: 25000 }
+            ]
+        };
+
+        let calcMode = "gps";
+        let tripType = "oneway";
+        let selectedSpecialName = "";
+        let selectedSpecialFee = null;
+
+        let mapInstance = null;
+        let startMarker = null;
+        let destMarker = null;
+        let routeLine = null;
+        let startCoords = { ...CONFIG.MAP_DEFAULT_COORDS };
+        let destCoords = null;
+        let watchId = null;
+        let lastTrackedCoords = null;
+        let trackedKm = 0;
+        let routingRequestSeq = 0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('ratePerKmInput').value = CONFIG.DEFAULT_RATE_PER_KM;
+            document.getElementById('startFeeInput').value = CONFIG.DEFAULT_START_FEE;
+            updateHeaderSubtitle();
+            initSpecialLocationsDropdown();
+            calculateAll();
+            if (calcMode === 'gps') {
+                initInteractiveMap();
+            }
+        });
+
+        function formatNumber(num) {
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function updateHeaderSubtitle() {
+            const sub = document.getElementById('headerSubtitle');
+            if (calcMode === "street") {
+                sub.textContent = `ဗဟို: ${CONFIG.CENTER_EW} လမ်း × ${CONFIG.CENTER_NS} လမ်းထောင့် (၁ ပြ = ${formatNumber(CONFIG.RATE_PER_BLOCK)} ကျပ်)`;
+            } else {
+                const kmRateVal = parseFloat(document.getElementById('ratePerKmInput').value);
+                const kmRate = isNaN(kmRateVal) || kmRateVal < 0 ? CONFIG.DEFAULT_RATE_PER_KM : kmRateVal;
+                sub.textContent = `Map & Kilo Unit (၁ km = ${formatNumber(kmRate)} ကျပ်)`;
+            }
+        }
+
+        function switchCalcMode(mode) {
+            calcMode = mode;
+            document.getElementById('tabGpsMode').classList.toggle('active', mode === 'gps');
+            document.getElementById('tabStreetMode').classList.toggle('active', mode === 'street');
+            document.getElementById('gpsModePanel').style.display = mode === 'gps' ? 'flex' : 'none';
+            document.getElementById('streetModePanel').style.display = mode === 'street' ? 'flex' : 'none';
+            document.getElementById('routeFeeTitle').textContent = mode === 'gps' ? 'Kilo ခရီးစရိတ်' : 'လမ်းကြောင်းသင့်ငွေ';
+            updateHeaderSubtitle();
+
+            if (mode === 'gps') {
+                initInteractiveMap();
+                setTimeout(() => {
+                    if (mapInstance) mapInstance.invalidateSize();
+                }, 120);
+            }
+            calculateAll();
+        }
+
+        function setGpsStatus(msg, type = "") {
+            const box = document.getElementById('gpsStatusBox');
+            box.className = "gps-status-box" + (type ? " " + type : "");
+            box.innerHTML = msg;
+        }
+
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const toRad = d => (d * Math.PI) / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function initInteractiveMap() {
+            if (typeof L === 'undefined') {
+                setGpsStatus("မြေပုံပြသရန် အင်တာနက်လိုအပ်ပါသည်။ အောက်ပါ Kilo အကွက်တွင် ဂဏန်းတိုက်ရိုက်ထည့်တွက်နိုင်ပါသည်။", "err");
+                return;
+            }
+            if (mapInstance) return;
+
+            mapInstance = L.map('interactiveMap', {
+                zoomControl: true
+            }).setView([startCoords.lat, startCoords.lon], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(mapInstance);
+
+            const startIcon = L.divIcon({
+                className: '',
+                html: '<div class="custom-pin-start"></div>',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+
+            startMarker = L.marker([startCoords.lat, startCoords.lon], {
+                icon: startIcon,
+                draggable: true
+            }).addTo(mapInstance);
+
+            startMarker.bindPopup("စမှတ် (လက်ရှိနေရာ - ဆွဲရွှေ့နိုင်သည်)");
+            startMarker.on('dragend', () => {
+                const pos = startMarker.getLatLng();
+                startCoords = { lat: pos.lat, lon: pos.lng };
+                updateMapRouteAndKm();
+            });
+
+            mapInstance.on('click', e => {
+                setDestinationOnMap(e.latlng.lat, e.latlng.lng);
+            });
+
+            locateUserOnMap(false);
+        }
+
+        function locateUserOnMap(showError) {
+            if (!navigator.geolocation) {
+                if (showError) setGpsStatus("ဤ Browser တွင် Location မရရှိနိုင်ပါ။ မြေပုံပေါ်က အပြာရောင် Pin ကို ကိုယ်တိုင်ဆွဲရွှေ့နိုင်ပါသည်။", "err");
+                return;
+            }
+            setGpsStatus("လက်ရှိ Location ရှာနေပါသည်...", "");
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    startCoords = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude
+                    };
+                    if (mapInstance && startMarker) {
+                        startMarker.setLatLng([startCoords.lat, startCoords.lon]);
+                        if (!destCoords) {
+                            mapInstance.setView([startCoords.lat, startCoords.lon], 15);
+                        } else {
+                            fitBothPins();
+                        }
+                    }
+                    setGpsStatus(
+                        `✓ လက်ရှိ Location ပြထားပါပြီ (±${Math.round(pos.coords.accuracy)}m)။ သွားချင်တဲ့နေရာကို မြေပုံပေါ်မှာ တစ်ချက်ထောက်ပါ။`,
+                        "ok"
+                    );
+                    updateMapRouteAndKm();
+                },
+                err => {
+                    const msg = `လက်ရှိ Location အလိုအလျောက်ဖတ်မရပါ (${err.message})။ မြေပုံပေါ်က အပြာရောင် Pin (စမှတ်) ကို ဆွဲရွှေ့ပြီး သွားမည့်နေရာကို ထောက်နိုင်ပါသည်။`;
+                    setGpsStatus(msg, showError ? "err" : "");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function setDestinationOnMap(lat, lon) {
+            destCoords = { lat, lon };
+            if (!mapInstance) return;
+
+            const destIcon = L.divIcon({
+                className: '',
+                html: '<div class="custom-pin-end"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            if (!destMarker) {
+                destMarker = L.marker([lat, lon], {
+                    icon: destIcon,
+                    draggable: true
+                }).addTo(mapInstance);
+                destMarker.bindPopup("သွားမည့်နေရာ (ဆွဲရွှေ့နိုင်သည်)");
+                destMarker.on('dragend', () => {
+                    const pos = destMarker.getLatLng();
+                    destCoords = { lat: pos.lat, lon: pos.lng };
+                    updateMapRouteAndKm();
+                });
+            } else {
+                destMarker.setLatLng([lat, lon]);
+            }
+
+            updateMapRouteAndKm();
+        }
+
+        function drawPolylineOnMap(latLngs, isFallback) {
+            if (!mapInstance) return;
+            const style = isFallback
+                ? { color: '#64748b', weight: 3, dashArray: '6, 6' }
+                : { color: '#e11d48', weight: 4, dashArray: null };
+
+            if (!routeLine) {
+                routeLine = L.polyline(latLngs, style).addTo(mapInstance);
+            } else {
+                routeLine.setLatLngs(latLngs);
+                routeLine.setStyle(style);
+            }
+        }
+
+        async function updateMapRouteAndKm() {
+            if (!destCoords) return;
+
+            const seq = ++routingRequestSeq;
+            const straightKm = haversineKm(startCoords.lat, startCoords.lon, destCoords.lat, destCoords.lon);
+            const fallbackRoadKm = +(straightKm * CONFIG.ROAD_FACTOR).toFixed(2);
+
+            drawPolylineOnMap(
+                [
+                    [startCoords.lat, startCoords.lon],
+                    [destCoords.lat, destCoords.lon]
+                ],
+                true
+            );
+            document.getElementById('kmInput').value = fallbackRoadKm.toFixed(2);
+            calculateAll();
+
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${startCoords.lon},${startCoords.lat};${destCoords.lon},${destCoords.lat}?overview=full&geometries=geojson`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Routing failed');
+
+                const data = await res.json();
+                if (seq !== routingRequestSeq) return;
+
+                const route = data.routes && data.routes[0];
+                if (!route || !route.geometry || !Array.isArray(route.geometry.coordinates)) {
+                    throw new Error('Invalid route response');
+                }
+
+                const roadKm = +(route.distance / 1000).toFixed(2);
+                const latLngs = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+
+                drawPolylineOnMap(latLngs, false);
+                document.getElementById('kmInput').value = roadKm.toFixed(2);
+                setGpsStatus(
+                    `📍 လမ်းအတိုင်း အကွာအဝေး: <strong>${roadKm.toFixed(2)} km</strong>`,
+                    "ok"
+                );
+                calculateAll();
+            } catch (err) {
+                if (seq !== routingRequestSeq) return;
+                setGpsStatus(
+                    `📍 ခန့်မှန်း အကွာအဝေး: <strong>${fallbackRoadKm.toFixed(2)} km</strong>`,
+                    "ok"
+                );
+            }
+        }
+
+        function fitBothPins() {
+            if (!mapInstance || !startMarker || !destMarker) return;
+            const group = L.featureGroup([startMarker, destMarker]);
+            mapInstance.fitBounds(group.getBounds().pad(0.25));
+        }
+
+        function clearDestinationPin() {
+            routingRequestSeq++;
+            destCoords = null;
+            if (mapInstance && destMarker) {
+                mapInstance.removeLayer(destMarker);
+                destMarker = null;
+            }
+            if (mapInstance && routeLine) {
+                mapInstance.removeLayer(routeLine);
+                routeLine = null;
+            }
+            if (watchId === null) {
+                trackedKm = 0;
+                lastTrackedCoords = null;
+                document.getElementById('kmInput').value = "0.00";
+            }
+            setGpsStatus("သွားချင်တဲ့နေရာကို မြေပုံပေါ်မှာ တစ်ချက်ထောက်ပါ။", "");
+            calculateAll();
+        }
+
+        function onManualKmInput() {
+            const val = parseFloat(document.getElementById('kmInput').value);
+            trackedKm = isNaN(val) || val < 0 ? 0 : val;
+            calculateAll();
+        }
+
+        function adjustRatePerKm(delta) {
+            const input = document.getElementById('ratePerKmInput');
+            const currentVal = parseFloat(input.value);
+            const baseVal = isNaN(currentVal) ? CONFIG.DEFAULT_RATE_PER_KM : currentVal;
+            input.value = Math.max(0, baseVal + delta);
+            calculateAll();
+        }
+
+        function toggleLiveTracking() {
+            const btn = document.getElementById('btnToggleTracking');
+
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                lastTrackedCoords = null;
+                btn.textContent = "▶ Start";
+                btn.className = "gps-btn btn-start";
+                setGpsStatus(
+                    `⏸ ခဏရပ်နားထားပါသည်။ လက်ရှိ Kilo: <strong>${trackedKm.toFixed(2)} km</strong> (Start ထပ်နှိပ်လျှင် ဆက်ပေါင်းမည်)`,
+                    "ok"
+                );
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                setGpsStatus("ဤ Browser တွင် Location မရရှိနိုင်ပါ။", "err");
+                return;
+            }
+
+            const currentInputKm = parseFloat(document.getElementById('kmInput').value);
+            if (!isNaN(currentInputKm) && currentInputKm > trackedKm) {
+                trackedKm = currentInputKm;
+            }
+            lastTrackedCoords = null;
+            document.getElementById('kmInput').value = trackedKm.toFixed(2);
+            btn.textContent = "⏹ Stop";
+            btn.className = "gps-btn btn-stop";
+            setGpsStatus(
+                `● Live Tracking (လက်ရှိ ${trackedKm.toFixed(2)} km မှ ဆက်တိုင်းနေပါသည်)...`,
+                "ok"
+            );
+
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    const nextPt = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                    startCoords = { ...nextPt };
+                    if (mapInstance && startMarker) {
+                        startMarker.setLatLng([nextPt.lat, nextPt.lon]);
+                        mapInstance.panTo([nextPt.lat, nextPt.lon]);
+                    }
+
+                    if (lastTrackedCoords) {
+                        const segKm = haversineKm(
+                            lastTrackedCoords.lat,
+                            lastTrackedCoords.lon,
+                            nextPt.lat,
+                            nextPt.lon
+                        );
+                        if (segKm >= CONFIG.MIN_MOVE_KM) {
+                            trackedKm += segKm;
+                            lastTrackedCoords = nextPt;
+                        }
+                    } else {
+                        lastTrackedCoords = nextPt;
+                    }
+
+                    document.getElementById('kmInput').value = trackedKm.toFixed(2);
+                    setGpsStatus(
+                        `● Live Tracking: <strong>${trackedKm.toFixed(2)} km</strong> (±${Math.round(pos.coords.accuracy)}m)`,
+                        "ok"
+                    );
+                    calculateAll();
+                },
+                err => {
+                    setGpsStatus(`Tracking ချို့ယွင်းချက်: ${err.message}`, "err");
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+            calculateAll();
+        }
+
+        function initSpecialLocationsDropdown() {
+            const selectEl = document.getElementById('specialLocationSelect');
+            selectEl.innerHTML = '<option value="">>> တည်နေရာ ရွေးပါ <<</option>';
+
+            CONFIG.SPECIAL_LOCATIONS.forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc.name;
+                option.textContent = loc.name;
+                selectEl.appendChild(option);
+            });
+        }
+
+        function onSpecialLocationChange() {
+            const selectEl = document.getElementById('specialLocationSelect');
+            const chosenName = selectEl.value;
+            if (!chosenName) {
+                clearSpecialLocation();
+                return;
+            }
+
+            const found = CONFIG.SPECIAL_LOCATIONS.find(l => l.name === chosenName);
+            if (!found) return;
+
+            selectedSpecialName = found.name;
+            selectedSpecialFee = found.fee;
+
+            document.getElementById('ewStreet').value = '';
+            document.getElementById('nsStreet').value = '';
+            document.getElementById('streetWarning').classList.remove('show');
+            selectEl.classList.add('has-value');
+            document.getElementById('clearSpecialBtn').classList.add('show');
+
+            calculateAll();
+        }
+
+        function clearSpecialLocation() {
+            selectedSpecialName = "";
+            selectedSpecialFee = null;
+            const selectEl = document.getElementById('specialLocationSelect');
+            selectEl.value = '';
+            selectEl.classList.remove('has-value');
+            document.getElementById('clearSpecialBtn').classList.remove('show');
+            calculateAll();
+        }
+
+        function onStreetInput() {
+            if (selectedSpecialName || selectedSpecialFee !== null) {
+                clearSpecialLocation();
+            }
+            calculateAll();
+        }
+
+        function setTripType(type) {
+            tripType = type;
+            document.querySelectorAll('.trip-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-trip') === type);
+            });
+            calculateAll();
+        }
+
+        function adjustStartFee(delta) {
+            const input = document.getElementById('startFeeInput');
+            const currentVal = parseFloat(input.value) || 0;
+            input.value = Math.max(0, currentVal + delta);
+            calculateAll();
+        }
+
+        function calculateAll() {
+            updateHeaderSubtitle();
+
+            let baseRouteFee = 0;
+            let sourceTagText = "0.00 km";
+
+            if (calcMode === "gps") {
+                const kmVal = parseFloat(document.getElementById('kmInput').value);
+                const km = isNaN(kmVal) || kmVal < 0 ? 0 : kmVal;
+                const rateVal = parseFloat(document.getElementById('ratePerKmInput').value);
+                const rateKm = isNaN(rateVal) || rateVal < 0 ? CONFIG.DEFAULT_RATE_PER_KM : rateVal;
+
+                baseRouteFee = Math.round(km * rateKm);
+                sourceTagText = `${km.toFixed(2)} km`;
+                document.getElementById('gpsKmBadge').textContent = `${km.toFixed(2)} km`;
+            } else {
+                sourceTagText = "လမ်းနံပါတ်";
+                const ewVal = document.getElementById('ewStreet').value.trim();
+                const nsVal = document.getElementById('nsStreet').value.trim();
+                const ew = ewVal === "" ? NaN : parseFloat(ewVal);
+                const ns = nsVal === "" ? NaN : parseFloat(nsVal);
+
+                const warningEl = document.getElementById('streetWarning');
+                warningEl.classList.toggle('show', !isNaN(ew) && ew > 43 && ew < 101);
+
+                let dEw = 0, dNs = 0;
+
+                if (selectedSpecialFee !== null && selectedSpecialName !== "") {
+                    baseRouteFee = selectedSpecialFee;
+                    sourceTagText = selectedSpecialName;
+                } else if (!isNaN(ew) || !isNaN(ns)) {
+                    const cEw = isNaN(ew) ? CONFIG.CENTER_EW : ew;
+                    const cNs = isNaN(ns) ? CONFIG.CENTER_NS : ns;
+
+                    dEw = cEw >= 101 ? (13 + (cEw - 100)) : Math.abs(cEw - CONFIG.CENTER_EW);
+                    dNs = Math.abs(cNs - CONFIG.CENTER_NS);
+                    baseRouteFee = (dEw + dNs) * CONFIG.RATE_PER_BLOCK;
+                    sourceTagText = "လမ်းနံပါတ်";
+                }
+
+                const totalBlocks = dEw + dNs;
+                document.getElementById('totalBlocksBadge').textContent = selectedSpecialFee !== null
+                    ? "အထူးနေရာ"
+                    : `စုစုပေါင်း: ${totalBlocks} ပြ`;
+                document.getElementById('ewHelper').textContent = `${CONFIG.CENTER_EW} လမ်းမှ ${dEw} ပြ (${formatNumber(dEw * CONFIG.RATE_PER_BLOCK)})`;
+                document.getElementById('nsHelper').textContent = `${CONFIG.CENTER_NS} လမ်းမှ ${dNs} ပြ (${formatNumber(dNs * CONFIG.RATE_PER_BLOCK)})`;
+            }
+
+            const finalRouteFee = tripType === "roundtrip" ? baseRouteFee * 2 : baseRouteFee;
+            document.getElementById('tripTypeBadge').textContent = tripType === "roundtrip" ? "၂ ကြောင်းစာ (၂ ဆ)" : "၁ ကြောင်းစာ";
+            document.getElementById('routeSourceTag').textContent = sourceTagText;
+            document.getElementById('routeFeeDisplay').textContent = formatNumber(finalRouteFee);
+
+            const startFee = Math.max(0, parseFloat(document.getElementById('startFeeInput').value) || 0);
+            document.getElementById('startFeeSummaryDisplay').textContent = formatNumber(startFee);
+
+            const totalFee = finalRouteFee + startFee;
+            document.getElementById('totalFeeDisplay').textContent = formatNumber(totalFee) + " ကျပ်";
+        }
+
+        function copySummary() {
+            let locationText = "";
+            if (calcMode === "gps") {
+                const kmVal = parseFloat(document.getElementById('kmInput').value) || 0;
+                locationText = `မြေပုံ Location (${kmVal.toFixed(2)} km)`;
+            } else {
+                locationText = selectedSpecialName
+                    ? selectedSpecialName
+                    : `${document.getElementById('ewStreet').value || CONFIG.CENTER_EW} လမ်း × ${document.getElementById('nsStreet').value || CONFIG.CENTER_NS} လမ်း`;
+            }
+
+            const tripText = tripType === "roundtrip" ? "အသွားအပြန်" : "အသွားသီးသန့်";
+            const routeText = document.getElementById('routeFeeDisplay').textContent;
+            const startText = formatNumber(Math.max(0, parseFloat(document.getElementById('startFeeInput').value) || 0));
+            const totalText = document.getElementById('totalFeeDisplay').textContent;
+
+            const summary = `📍 တည်နေရာ: ${locationText} (${tripText})\n🛣️ ခရီးစရိတ်: ${routeText} ကျပ်\n🚦 စတက်: ${startText} ကျပ်\n💰 စုစုပေါင်း: ${totalText}`;
+
+            const copyButtons = document.querySelectorAll('.mini-copy-btn');
+            navigator.clipboard.writeText(summary).then(() => {
+                copyButtons.forEach(btn => {
+                    const orig = btn.textContent;
+                    btn.textContent = "✓ Copied";
+                    setTimeout(() => { btn.textContent = orig; }, 1400);
+                });
+            });
+        }
+
+        function resetForm() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                const btn = document.getElementById('btnToggleTracking');
+                btn.textContent = "▶ Start";
+                btn.className = "gps-btn btn-start";
+            }
+            trackedKm = 0;
+            lastTrackedCoords = null;
+            clearDestinationPin();
+            document.getElementById('kmInput').value = "0.00";
+            document.getElementById('ewStreet').value = '';
+            document.getElementById('nsStreet').value = '';
+            document.getElementById('streetWarning').classList.remove('show');
+            clearSpecialLocation();
+            setTripType('oneway');
+            document.getElementById('startFeeInput').value = CONFIG.DEFAULT_START_FEE;
+            calculateAll();
+        }
+    </script>
+</body>
+</html>
