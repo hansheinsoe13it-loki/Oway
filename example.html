@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTS Voice Check</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px; }
+    button { padding: 14px 20px; font-size: 16px; border-radius: 10px; border: none; background: #10b981; color: #042f2e; font-weight: bold; cursor: pointer; }
+    pre { margin-top: 18px; background: #1e293b; padding: 14px; border-radius: 10px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <button id="testBtn">🔊 မြန်မာသံ စမ်းဖတ်မည်</button>
+  <pre id="log">ခလုတ်ကို နှိပ်ကြည့်ပါ...</pre>
+
+  <script>
+    const btn = document.getElementById("testBtn");
+    const log = document.getElementById("log");
+
+    function getVoiceList() {
+      return window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    }
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        const v = getVoiceList();
+        log.textContent = "Voices loaded: " + v.length + "\n" + v.map(x => `${x.name} (${x.lang})`).join("\n");
+      };
+    }
+
+    btn.addEventListener("click", () => {
+      const voices = getVoiceList();
+      log.textContent = "Total voices: " + voices.length + "\n" +
+        (voices.map(v => `${v.name} [${v.lang}]`).join("\n") || "No voices found");
+
+      if (!("speechSynthesis" in window)) {
+        log.textContent += "\n\nspeechSynthesis မရပါ";
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance("မင်္ဂလာပါ၊ မြန်မာအသံ ထွက်နေပါပြီ");
+      u.lang = "my-MM";
+
+      const myVoice = voices.find(v =>
+        v.lang.toLowerCase().startsWith("my") ||
+        v.name.toLowerCase().includes("myanmar") ||
+        v.name.toLowerCase().includes("burmese") ||
+        v.name.toLowerCase().includes("sm")
+      );
+
+      if (myVoice) {
+        u.voice = myVoice;
+        log.textContent += "\n\nSelected voice: " + myVoice.name;
+      } else {
+        log.textContent += "\n\nMy/Burmese voice မတွေ့ပါ၊ default voice ဖြင့် စမ်းနေသည်";
+      }
+
+      u.onstart = () => log.textContent += "\nStatus: Speaking started";
+      u.onend = () => log.textContent += "\nStatus: Speaking finished";
+      u.onerror = (e) => log.textContent += "\nStatus: Error -> " + e.error;
+
+      window.speechSynthesis.speak(u);
+    });
+  </script>
+</body>
+</html>
